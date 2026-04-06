@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
     status: searchParams.get('status') ?? undefined,
   }
 
-  const page = parseInt(searchParams.get('page') ?? '1')
-  const limit = parseInt(searchParams.get('limit') ?? '50')
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1') || 1)
+  const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') ?? '50') || 50))
   const skip = (page - 1) * limit
 
   const where = buildEntriesWhere(filters)

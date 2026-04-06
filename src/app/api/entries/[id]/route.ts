@@ -25,6 +25,10 @@ export async function PATCH(
 ) {
   const { id } = await params
   const body = await req.json()
+
+  const exists = await db.entry.findUnique({ where: { id }, select: { id: true } })
+  if (!exists) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const allowed = ['title', 'date', 'entryType', 'status'] as const
   const data: Record<string, unknown> = {}
   for (const key of allowed) {
@@ -46,6 +50,15 @@ export async function PATCH(
       create: { entryId: id, mood, topics, people, places, themes },
       update: { mood, topics, people, places, themes },
     })
+  }
+
+  // Validate date if provided
+  if ('date' in data) {
+    const parsed = new Date(data.date as string)
+    if (isNaN(parsed.getTime())) {
+      return NextResponse.json({ error: 'Invalid date' }, { status: 422 })
+    }
+    data.date = parsed
   }
 
   try {
