@@ -59,6 +59,17 @@ data/inbox/
 
 Or drop flat files into `data/inbox/` — you can assign them to a book via the UI at `/upload`.
 
+## Hosted Database (optional)
+
+By default the app runs Postgres locally via Docker. To use a hosted database instead (e.g. [Neon](https://neon.tech) — free tier, standard Postgres):
+
+1. Create a project and copy the connection string
+2. Set `DATABASE_URL=<your-connection-string>` in `.env.local`
+3. Run migrations: `npx prisma migrate deploy`
+4. Skip `docker compose up db` — you don't need the local container
+
+Images are always stored locally in `data/` — only transcriptions and metadata go to the database.
+
 ## Remote Access
 
 Use [Tailscale](https://tailscale.com) to access from other devices on your network. The app runs on port 3000.
