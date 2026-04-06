@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Book {
+  id         String   @id @default(uuid())
+  name       String
+  folderHint String?  @map("folder_hint")
+  dateRange  String?  @map("date_range")
+  createdAt  DateTime @default(now()) @map("created_at")
+  pages      Page[]
+  entries    Entry[]
+
+  @@map("books")
+}
+
+model Page {
+  id           String         @id @default(uuid())
+  bookId       String         @map("book_id")
+  entryId      String?        @map("entry_id")
+  filePath     String         @map("file_path")
+  originalPath String         @map("original_path")
+  fileHash     String         @unique @map("file_hash")
+  pageOrder    Int            @default(0) @map("page_order")
+  ingestedAt   DateTime       @default(now()) @map("ingested_at")
+  book         Book           @relation(fields: [bookId], references: [id])
+  entry        Entry?         @relation(fields: [entryId], references: [id])
+  job          ProcessingJob?
+
+  @@map("pages")
+}
+
+enum EntryType {
+  text
+  image
+  mixed
+  special
+}
+
+enum EntryStatus {
+  pending_review
+  approved
+}
+
+model Entry {
+  id              String        @id @default(uuid())
+  bookId          String        @map("book_id")
+  title           String?
+  date            DateTime?     @db.Date
+  dateInferred    Boolean       @default(false) @map("date_inferred")
+  entryType       EntryType     @map("entry_type")
+  status          EntryStatus   @default(pending_review)
+  confidenceScore Float         @map("confidence_score")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  book            Book          @relation(fields: [bookId], references: [id])
+  pages           Page[]
+  transcription   Transcription?
+  metadata        EntryMetadata?
+
+  @@map("entries")
+}
+
+model Transcription {
+  id            String  @id @default(uuid())
+  entryId       String  @unique @map("entry_id")
+  rawText       String  @map("raw_text")
+  correctedText String? @map("corrected_text")
+  language      String  @default("no")
+  entry         Entry   @relation(fields: [entryId], references: [id])
+
+  @@map("transcriptions")
+}
+
+model EntryMetadata {
+  id      String   @id @default(uuid())
+  entryId String   @unique @map("entry_id")
+  mood    String?
+  topics  String[]
+  people  String[]
+  places  String[]
+  themes  String[]
+  entry   Entry    @relation(fields: [entryId], references: [id])
+
+  @@map("entry_metadata")
+}
+
+enum JobStatus {
+  queued
+  processing
+  done
+  failed
+}
+
+model ProcessingJob {
+  id          String    @id @default(uuid())
+  pageId      String    @unique @map("page_id")
+  status      JobStatus @default(queued)
+  error       String?
+  attempts    Int       @default(0)
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  page        Page      @relation(fields: [pageId], references: [id])
+
+  @@map("processing_jobs")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}
