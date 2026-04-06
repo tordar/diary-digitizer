@@ -5,7 +5,7 @@ set -e
 npx prisma migrate deploy
 
 # Start file watcher in background
-node scripts/watcher.js &
+tsx scripts/watcher.ts &
 
 # Start Next.js
 exec node server.js
