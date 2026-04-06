@@ -57,6 +57,7 @@ export default function SettingsPage() {
         {field('ollama_url', 'Ollama URL', 'F.eks. http://localhost:11434 eller http://host.docker.internal:11434')}
         {field('ollama_model', 'Ollama-modell', 'F.eks. qwen2.5vl:7b')}
         {field('confidence_threshold', 'Sikkerhetsterskelen', 'Oppføringer under denne verdien (0.0–1.0) går til gjennomgang')}
+        {field('default_language', 'Standardspråk', 'Språkkode for transkripsjoner, f.eks. "no" (norsk), "en" (engelsk)')}
         {field('prompt_template', 'AI-prompt', 'Skriv "default" for å bruke standardpromptet, eller lim inn din egen', true)}
         <button
           onClick={save}

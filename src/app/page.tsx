@@ -84,6 +84,18 @@ function BrowsePageContent() {
       })
   }, [searchParams, q])
 
+  // Derive mood and type counts from current entry list
+  const moodCounts = entries.reduce<Record<string, number>>((acc, e) => {
+    const m = e.metadata?.mood
+    if (m) acc[m] = (acc[m] ?? 0) + 1
+    return acc
+  }, {})
+
+  const typeCounts = entries.reduce<Record<string, number>>((acc, e) => {
+    acc[e.entryType] = (acc[e.entryType] ?? 0) + 1
+    return acc
+  }, {})
+
   useEffect(() => {
     fetch('/api/books')
       .then((r) => r.json())
@@ -116,8 +128,8 @@ function BrowsePageContent() {
       <div className="flex min-h-0 flex-1">
         <FilterSidebar
           books={books}
-          moods={MOOD_OPTIONS}
-          entryTypes={TYPE_OPTIONS}
+          moods={MOOD_OPTIONS.map((o) => ({ ...o, count: moodCounts[o.value] ?? 0 }))}
+          entryTypes={TYPE_OPTIONS.map((o) => ({ ...o, count: typeCounts[o.value] ?? 0 }))}
           topics={(exploreData?.topTopics ?? []).map((t) => ({ value: t.topic, label: t.topic, count: t.count }))}
           people={(exploreData?.topPeople ?? []).map((p) => ({ value: p.person, label: p.person, count: p.count }))}
           places={(exploreData?.topPlaces ?? []).map((p) => ({ value: p.place, label: p.place, count: p.count }))}

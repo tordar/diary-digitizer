@@ -72,7 +72,7 @@ export default function ReviewPage() {
           <div className="border-b border-slate-800 px-4 py-3">
             <p className="font-medium text-slate-100">{entry.title ?? displayDate}</p>
             <p className="mt-0.5 text-xs text-slate-500">
-              {entry.book.name} · {Math.round(entry.confidenceScore * 100)}% sikkerhet
+              {entry.book.name} · {Math.round(entry.confidenceScore * 100)}% sikkerhet · Lav tillit
               {entry.dateInferred && ' · Dato anslått'}
             </p>
           </div>

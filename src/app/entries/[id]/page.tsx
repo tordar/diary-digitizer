@@ -26,6 +26,7 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
   const [entry, setEntry] = useState<EntryData | null>(null)
   const [editing, setEditing] = useState(false)
   const [correctedText, setCorrectedText] = useState('')
+  const [adjacentIds, setAdjacentIds] = useState<{ prev: string | null; next: string | null }>({ prev: null, next: null })
   const router = useRouter()
 
   useEffect(() => {
@@ -34,6 +35,17 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
       .then((data) => {
         setEntry(data)
         setCorrectedText(data.transcription?.correctedText ?? data.transcription?.rawText ?? '')
+      })
+
+    // Fetch entry list to get prev/next IDs
+    fetch(`/api/entries?limit=200`)
+      .then((r) => r.json())
+      .then(({ entries: list }: { entries: { id: string }[] }) => {
+        const idx = list.findIndex((e) => e.id === id)
+        setAdjacentIds({
+          prev: idx > 0 ? list[idx - 1].id : null,
+          next: idx < list.length - 1 ? list[idx + 1].id : null,
+        })
       })
   }, [id])
 
@@ -154,8 +166,20 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
           )}
 
           <div className="flex justify-between border-t border-slate-800 px-4 py-2 text-xs text-slate-500">
-            <button className="hover:text-slate-300">← Forrige</button>
-            <button className="hover:text-slate-300">Neste →</button>
+            <button
+              onClick={() => adjacentIds.prev && router.push(`/entries/${adjacentIds.prev}`)}
+              disabled={!adjacentIds.prev}
+              className="hover:text-slate-300 disabled:opacity-30"
+            >
+              ← Forrige
+            </button>
+            <button
+              onClick={() => adjacentIds.next && router.push(`/entries/${adjacentIds.next}`)}
+              disabled={!adjacentIds.next}
+              className="hover:text-slate-300 disabled:opacity-30"
+            >
+              Neste →
+            </button>
           </div>
         </div>
       </div>
