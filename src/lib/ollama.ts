@@ -1,5 +1,6 @@
 import { aiResponseSchema, type AiResponse } from './schema'
 import { readFile } from 'fs/promises'
+import sharp from 'sharp'
 
 export async function transcribePage(
   imagePath: string,
@@ -8,10 +9,27 @@ export async function transcribePage(
   model: string,
   monthHint?: string | null
 ): Promise<AiResponse> {
-  const imageBuffer = await readFile(imagePath)
+  let imageBuffer: Buffer
+  let mimeType: string
+
+  const ext = imagePath.toLowerCase().split('.').pop() ?? ''
+
+  if (ext === 'heic') {
+    // Convert HEIC to JPEG before sending to Ollama
+    imageBuffer = await sharp(imagePath).jpeg({ quality: 90 }).toBuffer()
+    mimeType = 'image/jpeg'
+  } else if (ext === 'pdf') {
+    throw new Error('PDF transcription requires pre-conversion to image. Use a PDF-to-image tool before ingesting.')
+  } else if (ext === 'png') {
+    imageBuffer = await readFile(imagePath)
+    mimeType = 'image/png'
+  } else {
+    // jpg, jpeg, and any other format — treat as JPEG
+    imageBuffer = await readFile(imagePath)
+    mimeType = 'image/jpeg'
+  }
+
   const base64Image = imageBuffer.toString('base64')
-  const ext = imagePath.toLowerCase().split('.').pop()
-  const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg'
 
   const prompt = monthHint
     ? `${promptTemplate}\n\nNote: This page is from ${monthHint}. Use this as context for date inference.`
