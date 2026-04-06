@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dagbok — Private Journal Archive
 
-## Getting Started
+A self-hosted, privacy-first app for digitising handwritten journal entries. All AI processing runs locally using Ollama — no data ever leaves your machine.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Transcribes handwritten Norwegian (and other languages) using Ollama + Qwen2.5-VL
+- Extracts metadata: date, mood, topics, people, places, themes
+- Rich navigation: full-text search, filters, timeline heatmap, explore views
+- Confidence-based review queue — low-confidence entries flagged for correction
+- Supports text, image, mixed, and structured (special) page types
+- Bulk import from folder structure or individual file upload via the web UI
+
+## Requirements
+
+- macOS with Apple Silicon (for Metal GPU acceleration via Ollama)
+- [Ollama](https://ollama.com) installed and running
+- Docker and Docker Compose
+
+## Quick Start
+
+1. **Install Ollama and pull the model:**
+   ```bash
+   brew install ollama
+   ollama serve &
+   ollama pull qwen2.5vl:7b
+   ```
+
+2. **Clone and configure:**
+   ```bash
+   git clone <repo-url> dagbok
+   cd dagbok
+   cp .env.example .env.local
+   ```
+
+3. **Start the app:**
+   ```bash
+   docker compose up
+   ```
+
+4. Open http://localhost:3000
+
+## Importing Journals
+
+Drop image files into `data/inbox/`. The app picks them up automatically.
+
+**Folder structure (optional but recommended):**
+```
+data/inbox/
+  Book 1/
+    [1] January 2018/
+      001.jpg
+    Special/
+      cover.jpg
+  Book 2/
+    ...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Or drop flat files into `data/inbox/` — you can assign them to a book via the UI at `/upload`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Remote Access
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Use [Tailscale](https://tailscale.com) to access from other devices on your network. The app runs on port 3000.
 
-## Learn More
+## Configuration
 
-To learn more about Next.js, take a look at the following resources:
+All settings are configurable via the Settings page (`/settings`):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Setting | Default | Description |
+|---|---|---|
+| Ollama URL | `http://host.docker.internal:11434` | Where Ollama is running |
+| Ollama model | `qwen2.5vl:7b` | Vision model for transcription |
+| Confidence threshold | `0.85` | Entries below this go to review queue |
+| AI prompt | `default` | Custom prompt template for your handwriting |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development
 
-## Deploy on Vercel
+```bash
+# Install dependencies
+npm install
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Start database
+docker compose up db
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Run dev server + file watcher
+npm run dev
+
+# Run tests
+npm test
+```
+
+Copy `.env.example` to `.env.local` and adjust values for local development.
+
+## Architecture
+
+| Component | Technology | Notes |
+|---|---|---|
+| Frontend + API | Next.js 16 + TypeScript | Docker |
+| Database | PostgreSQL 16 + Norwegian FTS | Docker |
+| AI model | Ollama + Qwen2.5-VL | Native macOS (Metal GPU) |
+| Remote access | Tailscale | Host network |
+
+The file watcher runs as a Node.js child process alongside Next.js. Scanned images are processed through Ollama, transcribed, and stored in PostgreSQL with full-text search indexes.
+
+## Data
+
+All data lives in the `data/` directory (excluded from git):
+
+```
+data/
+  inbox/      # Drop files here for ingestion
+  processed/  # Original files after ingestion
+  images/     # Web-optimised copies
+  rejected/   # Unsupported or unreadable files
+```
+
+## Privacy
+
+- No cloud services, no telemetry, no API keys required
+- All AI processing runs locally on your machine
+- Your journal data never leaves your device
