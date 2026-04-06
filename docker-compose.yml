@@ -1,0 +1,34 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://journal:journal@db:5432/journal
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.85}
+      - DATA_DIR=/data
+    volumes:
+      - ./data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: journal
+      POSTGRES_PASSWORD: journal
+      POSTGRES_DB: journal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U journal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
