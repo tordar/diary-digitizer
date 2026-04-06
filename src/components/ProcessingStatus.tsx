@@ -12,8 +12,12 @@ export function ProcessingStatus() {
 
   useEffect(() => {
     const poll = async () => {
-      const res = await fetch('/api/jobs')
-      if (res.ok) setStats(await res.json())
+      try {
+        const res = await fetch('/api/jobs')
+        if (res.ok) setStats(await res.json())
+      } catch {
+        // Silently ignore network errors — banner disappears until next successful poll
+      }
     }
     poll()
     const id = setInterval(poll, 5000)

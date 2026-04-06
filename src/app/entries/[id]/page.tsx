@@ -38,7 +38,7 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
       })
 
     // Fetch entry list to get prev/next IDs
-    fetch(`/api/entries?limit=200`)
+    fetch(`/api/entries?limit=2000`)
       .then((r) => r.json())
       .then(({ entries: list }: { entries: { id: string }[] }) => {
         const idx = list.findIndex((e) => e.id === id)
@@ -155,6 +155,7 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
 
           {entry.metadata && (
             <MetadataTags
+              key={entry.id}
               entryId={entry.id}
               mood={entry.metadata.mood}
               topics={entry.metadata.topics}

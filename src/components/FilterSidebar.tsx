@@ -13,7 +13,7 @@ interface FilterSidebarProps {
   topics: FilterOption[]
   people: FilterOption[]
   places: FilterOption[]
-  activeFilters: Record<string, string>
+  activeFilters: Record<string, string | undefined>
   onFilterChange: (key: string, value: string | null) => void
 }
 

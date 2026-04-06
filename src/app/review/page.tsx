@@ -37,7 +37,7 @@ export default function ReviewPage() {
     setCurrent((c) => Math.min(c, entries.length - 2))
   }
 
-  const skip = () => setCurrent((c) => (c + 1) % entries.length)
+  const skip = () => setCurrent((c) => Math.min(c + 1, entries.length - 1))
 
   const saveMetadata = async (metadata: {
     mood: string | null; topics: string[]; people: string[];
@@ -85,6 +85,7 @@ export default function ReviewPage() {
           </div>
           {entry.metadata && (
             <MetadataTags
+              key={entry.id}
               entryId={entry.id}
               mood={entry.metadata.mood}
               topics={entry.metadata.topics}

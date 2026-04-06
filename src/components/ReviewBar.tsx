@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 interface ReviewBarProps {
   entryId: string
   total: number
@@ -15,12 +17,12 @@ export function ReviewBar({ entryId, total, current, onApprove, onSkip }: Review
       <button onClick={onSkip} className="rounded border border-slate-700 px-3 py-1 text-xs text-slate-400 hover:bg-slate-800">
         Hopp over
       </button>
-      <a
+      <Link
         href={`/entries/${entryId}`}
         className="rounded border border-slate-700 px-3 py-1 text-xs text-slate-400 hover:bg-slate-800"
       >
         ✏️ Rediger
-      </a>
+      </Link>
       <button onClick={onApprove} className="rounded bg-green-700 px-3 py-1 text-xs text-white hover:bg-green-600">
         ✓ Godkjenn
       </button>

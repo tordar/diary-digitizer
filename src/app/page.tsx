@@ -133,7 +133,7 @@ function BrowsePageContent() {
           topics={(exploreData?.topTopics ?? []).map((t) => ({ value: t.topic, label: t.topic, count: t.count }))}
           people={(exploreData?.topPeople ?? []).map((p) => ({ value: p.person, label: p.person, count: p.count }))}
           places={(exploreData?.topPlaces ?? []).map((p) => ({ value: p.place, label: p.place, count: p.count }))}
-          activeFilters={activeFilters as Record<string, string>}
+          activeFilters={activeFilters}
           onFilterChange={onFilterChange}
         />
 

@@ -5,15 +5,21 @@ interface ImageViewerProps {
   pages: { id: string; filePath: string; pageOrder: number }[]
 }
 
+// Helper to extract the relative path after the data root
+const getImagePath = (filePath: string): string => {
+  // filePath is like: /data/images/book1/file.jpg or ./data/images/file.jpg
+  // We need: images/book1/file.jpg
+  const match = filePath.match(/(?:\/|^)(images\/.+)$/)
+  return match ? match[1] : filePath.split('/').slice(-2).join('/')
+}
+
 export function ImageViewer({ pages }: ImageViewerProps) {
   const [rotation, setRotation] = useState(0)
   const [zoom, setZoom] = useState(1)
   const [activePage, setActivePage] = useState(0)
 
   const currentPage = pages[activePage]
-  const imgSrc = currentPage
-    ? `/api/images/${currentPage.filePath.split('/data/').pop()}`
-    : null
+  const imgSrc = currentPage ? `/api/images/${getImagePath(currentPage.filePath)}` : null
 
   return (
     <div className="flex flex-col">
@@ -55,7 +61,7 @@ export function ImageViewer({ pages }: ImageViewerProps) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/api/images/${page.filePath.split('/data/').pop()}`}
+                  src={`/api/images/${getImagePath(page.filePath)}`}
                   alt={`Side ${i + 1}`}
                   className="h-12 w-9 object-cover"
                 />
