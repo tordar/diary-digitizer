@@ -28,7 +28,7 @@ model Page {
   fileHash     String         @unique @map("file_hash")
   pageOrder    Int            @default(0) @map("page_order")
   ingestedAt   DateTime       @default(now()) @map("ingested_at")
-  book         Book           @relation(fields: [bookId], references: [id])
+  book         Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
   entry        Entry?         @relation(fields: [entryId], references: [id])
   job          ProcessingJob?
 
@@ -71,7 +71,7 @@ model Transcription {
   rawText       String  @map("raw_text")
   correctedText String? @map("corrected_text")
   language      String  @default("no")
-  entry         Entry   @relation(fields: [entryId], references: [id])
+  entry         Entry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@map("transcriptions")
 }
@@ -84,7 +84,7 @@ model EntryMetadata {
   people  String[]
   places  String[]
   themes  String[]
-  entry   Entry    @relation(fields: [entryId], references: [id])
+  entry   Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@map("entry_metadata")
 }
@@ -104,7 +104,7 @@ model ProcessingJob {
   attempts    Int       @default(0)
   startedAt   DateTime? @map("started_at")
   completedAt DateTime? @map("completed_at")
-  page        Page      @relation(fields: [pageId], references: [id])
+  page        Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
   @@map("processing_jobs")
 }
