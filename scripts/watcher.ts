@@ -1,3 +1,7 @@
+import { config } from 'dotenv'
+config({ path: '.env.local' })
+config() // fallback to .env
+
 import chokidar from 'chokidar'
 import { join } from 'path'
 import { enqueueFile } from '../src/lib/importer'
