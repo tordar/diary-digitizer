@@ -7,13 +7,13 @@ export async function PATCH(
 ) {
   const { id } = await params
   const { action } = await req.json()
-  if (action !== 'approve' && action !== 'reject') {
-    return NextResponse.json({ error: 'action must be approve or reject' }, { status: 400 })
+  if (action !== 'approve') {
+    return NextResponse.json({ error: 'action must be approve' }, { status: 400 })
   }
   try {
     const entry = await db.entry.update({
       where: { id },
-      data: { status: action === 'approve' ? 'approved' : 'pending_review' },
+      data: { status: 'approved' },
     })
     return NextResponse.json(entry)
   } catch (err) {
