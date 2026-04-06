@@ -16,21 +16,27 @@ export async function GET() {
     `,
     db.$queryRaw<{ person: string; count: bigint }[]>`
       SELECT unnest(people) AS person, COUNT(*) AS count
-      FROM entry_metadata
+      FROM entry_metadata em
+      JOIN entries e ON e.id = em.entry_id
+      WHERE e.status = 'approved'
       GROUP BY person
       ORDER BY count DESC
       LIMIT 30
     `,
     db.$queryRaw<{ place: string; count: bigint }[]>`
       SELECT unnest(places) AS place, COUNT(*) AS count
-      FROM entry_metadata
+      FROM entry_metadata em
+      JOIN entries e ON e.id = em.entry_id
+      WHERE e.status = 'approved'
       GROUP BY place
       ORDER BY count DESC
       LIMIT 30
     `,
     db.$queryRaw<{ topic: string; count: bigint }[]>`
       SELECT unnest(topics) AS topic, COUNT(*) AS count
-      FROM entry_metadata
+      FROM entry_metadata em
+      JOIN entries e ON e.id = em.entry_id
+      WHERE e.status = 'approved'
       GROUP BY topic
       ORDER BY count DESC
       LIMIT 50
