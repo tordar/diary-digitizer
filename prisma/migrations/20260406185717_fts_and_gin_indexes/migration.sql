@@ -30,7 +30,7 @@ CREATE INDEX entries_book_id_idx ON entries (book_id);
 
 -- Seed default settings
 INSERT INTO settings (key, value) VALUES
-  ('ollama_url', 'http://host.docker.internal:11434'),
+  ('ollama_url', 'http://localhost:11434'),
   ('ollama_model', 'qwen2.5vl:7b'),
   ('confidence_threshold', '0.85'),
   ('default_language', 'no'),

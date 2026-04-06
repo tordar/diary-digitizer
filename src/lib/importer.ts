@@ -76,21 +76,19 @@ export async function enqueueFile(
   let bookId = defaultBookId
   if (!bookId) {
     if (bookFolderHint) {
-      let book = await db.book.findFirst({ where: { folderHint: bookFolderHint } })
-      if (!book) {
-        book = await db.book.create({
-          data: { name: bookFolderHint, folderHint: bookFolderHint },
-        })
-      }
+      const book = await db.book.upsert({
+        where: { folderHint: bookFolderHint },
+        update: {},
+        create: { name: bookFolderHint, folderHint: bookFolderHint },
+      })
       bookId = book.id
     } else {
       // Flat import — assign to "Usortert" book
-      let book = await db.book.findFirst({ where: { folderHint: '__unsorted__' } })
-      if (!book) {
-        book = await db.book.create({
-          data: { name: 'Usortert', folderHint: '__unsorted__' },
-        })
-      }
+      const book = await db.book.upsert({
+        where: { folderHint: '__unsorted__' },
+        update: {},
+        create: { name: 'Usortert', folderHint: '__unsorted__' },
+      })
       bookId = book.id
     }
   }

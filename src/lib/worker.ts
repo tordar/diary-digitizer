@@ -128,6 +128,14 @@ export async function processJob(
 export async function runWorkerLoop(intervalMs = 2000): Promise<void> {
   const { db } = await import('./db')
 
+  // Recover jobs stuck in 'processing' from a previous crashed run
+  const stuck = await db.processingJob.updateMany({
+    where: { status: 'processing' },
+    data: { status: 'queued', startedAt: null },
+  })
+  if (stuck.count > 0) console.log(`[worker] Recovered ${stuck.count} stuck jobs`)
+
+
   const getSettings = async () => {
     const rows = await db.setting.findMany()
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]))
@@ -154,6 +162,7 @@ export async function runWorkerLoop(intervalMs = 2000): Promise<void> {
 
     // Re-parse month hint from the page's file path context
     const page = await db.page.findUnique({ where: { id: job.pageId } })
+    const label = page?.filePath.split('/').pop() ?? job.pageId
     let monthHint: string | null = null
     if (page) {
       // Use a variable to prevent vite from statically resolving this import
@@ -173,11 +182,14 @@ export async function runWorkerLoop(intervalMs = 2000): Promise<void> {
       }
     }
 
+    console.log(`[worker] Processing: ${label}`)
     try {
       await processJob(job.pageId, { ...settings, monthHint })
+      console.log(`[worker] Done: ${label}`)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       const newAttempts = job.attempts + 1
+      console.error(`[worker] Failed (attempt ${newAttempts}): ${label} — ${message}`)
       await db.processingJob.update({
         where: { pageId: job.pageId },
         data: {
@@ -190,5 +202,9 @@ export async function runWorkerLoop(intervalMs = 2000): Promise<void> {
     }
   }
 
-  setInterval(processNext, intervalMs)
+  // Run one job at a time — wait for it to finish before scheduling the next
+  const schedule = () => {
+    processNext().finally(() => setTimeout(schedule, intervalMs))
+  }
+  schedule()
 }

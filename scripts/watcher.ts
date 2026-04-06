@@ -20,13 +20,18 @@ async function main() {
     ignored: /(^|[/\\])\../,
   })
 
-  watcher.on('add', async (filePath) => {
+  // Serialize enqueue calls to prevent race conditions on book find-or-create
+  let enqueueQueue = Promise.resolve()
+
+  watcher.on('add', (filePath) => {
     console.log(`[watcher] New file: ${filePath}`)
-    try {
-      await enqueueFile(filePath, INBOX_DIR)
-    } catch (err) {
-      console.error(`[watcher] Failed to enqueue ${filePath}:`, err)
-    }
+    enqueueQueue = enqueueQueue.then(async () => {
+      try {
+        await enqueueFile(filePath, INBOX_DIR)
+      } catch (err) {
+        console.error(`[watcher] Failed to enqueue ${filePath}:`, err)
+      }
+    })
   })
 
   watcher.on('error', (err) => {

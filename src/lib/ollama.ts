@@ -46,11 +46,11 @@ export async function transcribePage(
         {
           role: 'user',
           content: prompt,
-          images: [`data:${mimeType};base64,${base64Image}`],
+          images: [base64Image],
         },
       ],
     }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(300_000),
   })
 
   if (!response.ok) {

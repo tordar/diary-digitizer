@@ -13,7 +13,7 @@ A self-hosted, privacy-first app for digitising handwritten journal entries. All
 
 ## Requirements
 
-- macOS with Apple Silicon (for Metal GPU acceleration via Ollama)
+- macOS with Apple Silicon (for Metal GPU acceleration via Ollama) — 16GB RAM recommended, 8GB works with limited concurrency
 - [Ollama](https://ollama.com) installed and running
 - Docker and Docker Compose
 
@@ -23,7 +23,8 @@ A self-hosted, privacy-first app for digitising handwritten journal entries. All
    ```bash
    brew install ollama
    ollama serve &
-   ollama pull qwen2.5vl:7b
+   ollama pull qwen2.5vl:7b   # recommended: best quality, needs ~6GB free RAM
+   # ollama pull qwen2.5vl:3b  # lighter: needs ~4GB free RAM
    ```
 
 2. **Clone and configure:**

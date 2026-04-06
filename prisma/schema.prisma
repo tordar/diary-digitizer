@@ -10,7 +10,7 @@ datasource db {
 model Book {
   id         String   @id @default(uuid())
   name       String
-  folderHint String?  @map("folder_hint")
+  folderHint String?  @unique @map("folder_hint")
   dateRange  String?  @map("date_range")
   createdAt  DateTime @default(now()) @map("created_at")
   pages      Page[]
