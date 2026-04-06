@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { db, Prisma } from '@/lib/db'
 
 export async function GET(
   _req: NextRequest,
@@ -32,9 +32,10 @@ export async function PATCH(
   }
 
   if ('correctedText' in body) {
-    await db.transcription.update({
+    await db.transcription.upsert({
       where: { entryId: id },
-      data: { correctedText: body.correctedText },
+      create: { entryId: id, rawText: body.correctedText ?? '', correctedText: body.correctedText },
+      update: { correctedText: body.correctedText },
     })
   }
 
@@ -47,11 +48,17 @@ export async function PATCH(
     })
   }
 
-  const entry = await db.entry.update({
-    where: { id },
-    data,
-    include: { transcription: true, metadata: true },
-  })
-
-  return NextResponse.json(entry)
+  try {
+    const entry = await db.entry.update({
+      where: { id },
+      data,
+      include: { transcription: true, metadata: true },
+    })
+    return NextResponse.json(entry)
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    throw err
+  }
 }

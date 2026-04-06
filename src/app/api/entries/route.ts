@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
       include: {
         book: { select: { id: true, name: true } },
-        pages: { select: { id: true, filePath: true, pageOrder: true }, take: 1 },
+        pages: { select: { id: true, filePath: true, pageOrder: true }, orderBy: { pageOrder: 'asc' }, take: 1 },
         transcription: { select: { correctedText: true, rawText: true } },
         metadata: { select: { mood: true, topics: true, people: true, places: true } },
       },
