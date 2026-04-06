@@ -2,7 +2,7 @@
 set -e
 
 # Run migrations
-npx prisma migrate deploy
+node_modules/.bin/prisma migrate deploy
 
 # Start file watcher in background
 tsx scripts/watcher.ts &

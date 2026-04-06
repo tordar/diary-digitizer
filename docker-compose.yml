@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
@@ -18,6 +19,7 @@ services:
 
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: journal
       POSTGRES_PASSWORD: journal
@@ -25,7 +27,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U journal"]
+      test: ["CMD-SHELL", "pg_isready -U journal -d journal"]
       interval: 5s
       timeout: 5s
       retries: 5

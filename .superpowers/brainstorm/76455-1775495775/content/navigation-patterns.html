@@ -1,0 +1,101 @@
+<h2>How do you want to navigate your journal?</h2>
+<p class="subtitle">Three different mental models for exploring ~2,900 entries. Click to select your preference.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="timeline" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;min-height:160px;display:flex;flex-direction:column;gap:8px">
+      <div style="color:#e2e8f0;font-size:13px;margin-bottom:4px">◀ 2018 ────────────────── 2026 ▶</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <span style="background:#1e40af;color:#bfdbfe;padding:2px 6px;border-radius:3px;font-size:11px">Jan</span>
+        <span style="background:#1e40af;color:#bfdbfe;padding:2px 6px;border-radius:3px;font-size:11px">Feb</span>
+        <span style="background:#7c3aed;color:#ddd6fe;padding:2px 6px;border-radius:3px;font-size:11px">Mar ●●●</span>
+        <span style="background:#1e40af;color:#bfdbfe;padding:2px 6px;border-radius:3px;font-size:11px">Apr</span>
+        <span style="background:#0f172a;color:#475569;padding:2px 6px;border-radius:3px;font-size:11px;border:1px solid #334155">May</span>
+      </div>
+      <div style="border-left:2px solid #334155;padding-left:10px;margin-top:4px">
+        <div style="color:#e2e8f0;font-size:12px">15. mars 2021</div>
+        <div style="color:#64748b;font-size:11px;margin-top:2px">😔 Lav stemning • Arbeid • Oslo</div>
+        <div style="color:#94a3b8;font-size:11px;margin-top:4px">"Begynte å tenke på fremtiden igjen..."</div>
+      </div>
+      <div style="border-left:2px solid #334155;padding-left:10px;opacity:0.5">
+        <div style="color:#e2e8f0;font-size:12px">16. mars 2021</div>
+        <div style="color:#64748b;font-size:11px;margin-top:2px">🙂 Nøytral • Refleksjon</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Timeline</h3>
+      <p>Calendar-first. Browse by year → month → day. Entries appear in chronological order with a visual heat map showing entry density. Natural for "what was I writing in summer 2020?"</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="facets" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;min-height:160px;display:flex;gap:12px">
+      <div style="width:120px;flex-shrink:0">
+        <div style="color:#e2e8f0;font-size:11px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Stemning</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;justify-content:space-between"><span style="color:#a3e635">😄 Glad</span><span>312</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:#94a3b8">🙂 Nøytral</span><span>890</span></div>
+          <div style="display:flex;justify-content:space-between;background:#1e293b;margin:0 -4px;padding:2px 4px;border-radius:3px"><span style="color:#f87171">😔 Lav</span><span style="color:#f87171">445</span></div>
+        </div>
+        <div style="color:#e2e8f0;font-size:11px;margin-top:8px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Temaer</div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;justify-content:space-between"><span>Arbeid</span><span>523</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Familie</span><span>412</span></div>
+          <div style="display:flex;justify-content:space-between"><span>Reise</span><span>201</span></div>
+        </div>
+      </div>
+      <div style="flex:1;border-left:1px solid #1e293b;padding-left:12px;display:flex;flex-direction:column;gap:6px">
+        <div style="color:#64748b;font-size:10px">Filtrert: 😔 Lav + Arbeid → 89 oppføringer</div>
+        <div style="background:#1e293b;padding:6px;border-radius:3px">
+          <div style="color:#e2e8f0;font-size:11px">3. feb 2020</div>
+          <div style="color:#94a3b8;font-size:10px;margin-top:2px">"En tung dag på kontoret..."</div>
+        </div>
+        <div style="background:#1e293b;padding:6px;border-radius:3px">
+          <div style="color:#e2e8f0;font-size:11px">14. mar 2020</div>
+          <div style="color:#94a3b8;font-size:10px;margin-top:2px">"Mye stress i det siste..."</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Faceted Filter</h3>
+      <p>Filter-first. Left sidebar with all metadata dimensions (mood, topics, people, places). Combine filters to find patterns: "all entries about work when I was in a low mood." Great for exploration and insight.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f172a;padding:16px;font-family:monospace;font-size:12px;color:#94a3b8;min-height:160px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="mock-input" placeholder="Søk i dagboken..." style="flex:1;font-size:11px;padding:4px 8px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:4px" readonly>
+        <span style="color:#64748b;font-size:10px">+ Filter</span>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <span style="background:#1e3a5f;color:#7dd3fc;padding:2px 8px;border-radius:12px;font-size:10px">😔 Lav stemning ×</span>
+        <span style="background:#3b1f5e;color:#c4b5fd;padding:2px 8px;border-radius:12px;font-size:10px">Oslo ×</span>
+        <span style="background:#0f172a;color:#475569;padding:2px 8px;border-radius:12px;font-size:10px;border:1px dashed #334155">+ legg til</span>
+      </div>
+      <div style="display:flex;gap:8px;flex:1">
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div style="background:#1e293b;padding:6px;border-radius:3px;border-left:2px solid #7c3aed">
+            <div style="color:#e2e8f0;font-size:11px">8. jan 2019</div>
+            <div style="color:#94a3b8;font-size:10px">"Tilbake i Oslo etter jul..."</div>
+          </div>
+          <div style="background:#1e293b;padding:6px;border-radius:3px;border-left:2px solid #7c3aed">
+            <div style="color:#e2e8f0;font-size:11px">2. feb 2019</div>
+            <div style="color:#94a3b8;font-size:10px">"Grå mandag i byen..."</div>
+          </div>
+        </div>
+        <div style="width:80px;background:#1e293b;border-radius:3px;padding:6px;font-size:10px;color:#475569">
+          <div>jan ██</div>
+          <div>feb ████</div>
+          <div>mar █</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Search + Filter + Timeline</h3>
+      <p>Search bar at the top, active filters shown as chips, results list in the middle, mini timeline/heatmap on the side. The most flexible — supports text search, filter combos, and time orientation simultaneously.</p>
+    </div>
+  </div>
+
+</div>

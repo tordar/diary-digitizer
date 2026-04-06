@@ -1,0 +1,7 @@
+{"type":"server-started","port":55350,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:55350","screen_dir":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/content","state_dir":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/state"}
+{"type":"screen-added","file":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/content/architecture.html"}
+{"type":"screen-added","file":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/content/waiting-1.html"}
+{"type":"screen-added","file":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/content/ui-layout.html"}
+{"type":"screen-added","file":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/content/entry-detail.html"}
+{"type":"screen-added","file":"/Users/tordartommervik/Documents/code/journal-digitizer/.superpowers/brainstorm/76762-1775498117/content/waiting-2.html"}
+{"type":"server-stopped","reason":"idle timeout"}
