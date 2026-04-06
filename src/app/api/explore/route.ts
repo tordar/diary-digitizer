@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 export async function GET() {
-  const [moodByYear, topPeople, topPlaces, topTopics, bookStats] = await Promise.all([
+  const [moodByYear, topPeople, topPlaces, topTopics, bookStats, bookMoods] = await Promise.all([
     db.$queryRaw<{ year: number; mood: string; count: bigint }[]>`
       SELECT
         EXTRACT(YEAR FROM e.date)::int AS year,
@@ -42,8 +42,21 @@ export async function GET() {
       LIMIT 50
     `,
     db.book.findMany({
-      include: { _count: { select: { entries: true } } },
+      select: {
+        id: true,
+        name: true,
+        dateRange: true,
+        _count: { select: { entries: true } },
+      },
     }),
+    db.$queryRaw<{ book_id: string; mood: string; count: bigint }[]>`
+      SELECT e.book_id, m.mood, COUNT(*)::bigint AS count
+      FROM entries e
+      JOIN entry_metadata m ON m.entry_id = e.id
+      WHERE e.status = 'approved' AND m.mood IS NOT NULL
+      GROUP BY e.book_id, m.mood
+      ORDER BY e.book_id, count DESC
+    `,
   ])
 
   return NextResponse.json({
@@ -52,5 +65,6 @@ export async function GET() {
     topPlaces: topPlaces.map((r) => ({ ...r, count: Number(r.count) })),
     topTopics: topTopics.map((r) => ({ ...r, count: Number(r.count) })),
     bookStats,
+    bookMoods: bookMoods.map((r) => ({ ...r, count: Number(r.count) })),
   })
 }

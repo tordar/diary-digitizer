@@ -8,7 +8,8 @@ interface ExploreData {
   topPeople: { person: string; count: number }[]
   topPlaces: { place: string; count: number }[]
   topTopics: { topic: string; count: number }[]
-  bookStats: { id: string; name: string; _count: { entries: number } }[]
+  bookStats: { id: string; name: string; dateRange: string | null; _count: { entries: number } }[]
+  bookMoods: { book_id: string; mood: string; count: number }[]
 }
 
 function TagCloud({ items, label, filterKey }: {
@@ -60,13 +61,36 @@ export default function ExplorePage() {
         <TagCloud items={data.topTopics.map((t) => ({ value: t.topic, count: t.count }))} label="Temaer" filterKey="topic" />
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Bøker</p>
-          <div className="flex flex-col gap-2">
-            {data.bookStats.map((book) => (
-              <div key={book.id} className="flex items-center justify-between">
-                <span className="text-sm text-slate-200">{book.name}</span>
-                <span className="text-xs text-slate-500">{book._count.entries} oppføringer</span>
-              </div>
-            ))}
+          <div className="flex flex-col gap-3">
+            {data.bookStats.map((book) => {
+              const moods = data.bookMoods.filter((m) => m.book_id === book.id)
+              const moodColors: Record<string, string> = { glad: '#86efac', nøytral: '#94a3b8', lav: '#fca5a5', blandet: '#fcd34d' }
+              const total = moods.reduce((s, m) => s + m.count, 0)
+              return (
+                <div key={book.id} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-200">{book.name}</span>
+                    <span className="text-xs text-slate-500">{book._count.entries} oppføringer</span>
+                  </div>
+                  {book.dateRange && (
+                    <span className="text-[11px] text-slate-500">{book.dateRange}</span>
+                  )}
+                  {moods.length > 0 && (
+                    <div className="flex h-2 w-full overflow-hidden rounded" title={moods.map((m) => `${m.mood}: ${m.count}`).join(', ')}>
+                      {moods.map((m) => (
+                        <div
+                          key={m.mood}
+                          style={{
+                            width: `${(m.count / total) * 100}%`,
+                            background: moodColors[m.mood] ?? '#475569',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
