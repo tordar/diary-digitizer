@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-const ALLOWED_SETTINGS = ['ollama_url', 'ollama_model', 'confidence_threshold', 'prompt_template', 'default_language']
+const ALLOWED_SETTINGS = ['ollama_url', 'ollama_model', 'confidence_threshold', 'prompt_template', 'default_language', 'ai_provider', 'anthropic_api_key', 'anthropic_model']
 
 export async function GET() {
   const rows = await db.setting.findMany()

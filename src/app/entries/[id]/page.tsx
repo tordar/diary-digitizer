@@ -1,8 +1,10 @@
 'use client'
+// MARKER_XQ7Z9
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ImageViewer } from '@/components/ImageViewer'
 import { MetadataTags } from '@/components/MetadataTags'
+import { EntryHeader } from '@/components/EntryHeader'
 
 interface EntryData {
   id: string
@@ -16,7 +18,7 @@ interface EntryData {
   pages: { id: string; filePath: string; pageOrder: number }[]
   transcription: { rawText: string; correctedText: string | null } | null
   metadata: {
-    mood: string | null; topics: string[]; people: string[];
+    mood: string[]; topics: string[]; people: string[];
     places: string[]; themes: string[]
   } | null
 }
@@ -63,7 +65,7 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
   }
 
   const saveMetadata = async (metadata: {
-    mood: string | null; topics: string[]; people: string[];
+    mood: string[]; topics: string[]; people: string[];
     places: string[]; themes: string[]
   }) => {
     await fetch(`/api/entries/${id}`, {
@@ -87,21 +89,16 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
           ← Tilbake
         </button>
         <span className="text-slate-700">|</span>
-        <span className="text-sm font-medium text-slate-100">
-          {entry.title ?? displayDate}
-        </span>
-        {entry.title && (
-          <span className="text-xs text-slate-500">{displayDate}{entry.dateInferred && ' (anslått)'}</span>
-        )}
-        <span className="text-xs text-slate-500">· {entry.book.name}</span>
-        <div className="flex-1" />
-        <span className={`rounded-full px-2.5 py-0.5 text-[11px] ${
-          entry.status === 'approved'
-            ? 'bg-green-900/60 text-green-400'
-            : 'bg-amber-900/60 text-amber-400'
-        }`}>
-          {entry.status === 'approved' ? '✓ Godkjent' : '⏳ Til gjennomgang'}
-        </span>
+        <EntryHeader
+          entryId={id}
+          title={entry.title}
+          date={entry.date}
+          dateInferred={entry.dateInferred}
+          bookName={entry.book.name}
+          status={entry.status}
+          displayDate={displayDate}
+          onSaved={(title, date) => setEntry((e) => e ? { ...e, title, date } : null)}
+        />
       </div>
 
       <div className="flex min-h-0 flex-1">

@@ -3,16 +3,30 @@ import { useState } from 'react'
 
 interface MetadataTagsProps {
   entryId: string
-  mood: string | null
+  mood: string[]
   topics: string[]
   people: string[]
   places: string[]
   themes: string[]
-  onSave: (data: { mood: string | null; topics: string[]; people: string[]; places: string[]; themes: string[] }) => Promise<void>
+  onSave: (data: { mood: string[]; topics: string[]; people: string[]; places: string[]; themes: string[] }) => Promise<void>
 }
 
-const MOODS = ['glad', 'nøytral', 'lav', 'blandet']
-const moodEmoji: Record<string, string> = { glad: '😄', nøytral: '🙂', lav: '😔', blandet: '😤' }
+const MOODS = [
+  'glad', 'lettet', 'takknemlig', 'spent', 'optimistisk', 'stolt', 'energisk', 'inspirert',
+  'rolig', 'nostalgisk', 'trist', 'ensom', 'frustrert', 'sint', 'engstelig', 'utmattet',
+  'overveldet', 'nedfor', 'skuffet', 'urolig', 'selvkritisk', 'reflektert', 'ambivalent',
+  'søkende', 'usikker', 'melankolsk', 'sårbar', 'lengtende', 'bekymret', 'håpefull',
+  'nøytral', 'observerende',
+]
+const moodEmoji: Record<string, string> = {
+  glad: '😄', lettet: '😮‍💨', takknemlig: '🙏', spent: '😬', optimistisk: '🌟',
+  stolt: '💪', energisk: '⚡', inspirert: '✨', rolig: '😌', nostalgisk: '🕰️',
+  trist: '😢', ensom: '🌑', frustrert: '😤', sint: '😠', engstelig: '😰',
+  utmattet: '😴', overveldet: '🌊', nedfor: '😞', skuffet: '😕', urolig: '😟',
+  selvkritisk: '🪞', reflektert: '🤔', ambivalent: '⚖️', søkende: '🔍', usikker: '❓',
+  melankolsk: '🌧️', sårbar: '🫀', lengtende: '🌅', bekymret: '😟', håpefull: '🌱',
+  nøytral: '😐', observerende: '👁️',
+}
 
 function TagList({ label, items, color }: { label: string; items: string[]; color: string }) {
   if (!items.length) return null
@@ -32,7 +46,7 @@ function TagList({ label, items, color }: { label: string; items: string[]; colo
 
 export function MetadataTags({ entryId: _entryId, mood, topics, people, places, themes, onSave }: MetadataTagsProps) {
   const [editing, setEditing] = useState(false)
-  const [localMood, setLocalMood] = useState<string | null>(mood)
+  const [localMood, setLocalMood] = useState<string[]>(mood)
   const [localTopics, setLocalTopics] = useState(topics.join(', '))
   const [localPeople, setLocalPeople] = useState(people.join(', '))
   const [localPlaces, setLocalPlaces] = useState(places.join(', '))
@@ -60,16 +74,16 @@ export function MetadataTags({ entryId: _entryId, mood, topics, people, places, 
         </div>
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Stemning</span>
-          <div className="flex gap-2">
-            {[null, ...MOODS].map((m) => (
+          <div className="flex flex-wrap gap-1.5">
+            {MOODS.map((m) => (
               <button
-                key={m ?? 'none'}
-                onClick={() => setLocalMood(m)}
+                key={m}
+                onClick={() => setLocalMood((prev) => prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m])}
                 className={`rounded-full px-2.5 py-0.5 text-[11px] ${
-                  localMood === m ? 'bg-violet-700 text-violet-100' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  localMood.includes(m) ? 'bg-violet-700 text-violet-100' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
                 }`}
               >
-                {m ? `${moodEmoji[m]} ${m}` : 'Ingen'}
+                {moodEmoji[m]} {m}
               </button>
             ))}
           </div>
@@ -111,12 +125,16 @@ export function MetadataTags({ entryId: _entryId, mood, topics, people, places, 
           ✏️ Rediger
         </button>
       </div>
-      {mood && (
+      {mood.length > 0 && (
         <div className="flex flex-col gap-1">
           <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Stemning</span>
-          <span className="w-fit rounded-full bg-slate-700 px-2.5 py-0.5 text-[11px] text-slate-200">
-            {moodEmoji[mood]} {mood}
-          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {mood.map((m) => (
+              <span key={m} className="w-fit rounded-full bg-slate-700 px-2.5 py-0.5 text-[11px] text-slate-200">
+                {moodEmoji[m] ?? '💭'} {m}
+              </span>
+            ))}
+          </div>
         </div>
       )}
       <TagList label="Temaer" items={topics} color="bg-blue-900/60 text-blue-300" />

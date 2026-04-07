@@ -13,7 +13,7 @@ interface ReviewEntry {
   book: { name: string }
   pages: { id: string; filePath: string; pageOrder: number }[]
   transcription: { rawText: string; correctedText: string | null } | null
-  metadata: { mood: string | null; topics: string[]; people: string[]; places: string[]; themes: string[] } | null
+  metadata: { mood: string[]; topics: string[]; people: string[]; places: string[]; themes: string[] } | null
 }
 
 export default function ReviewPage() {
@@ -40,7 +40,7 @@ export default function ReviewPage() {
   const skip = () => setCurrent((c) => Math.min(c + 1, entries.length - 1))
 
   const saveMetadata = async (metadata: {
-    mood: string | null; topics: string[]; people: string[];
+    mood: string[]; topics: string[]; people: string[];
     places: string[]; themes: string[]
   }) => {
     if (!entry) return

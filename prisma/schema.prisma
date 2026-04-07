@@ -79,7 +79,7 @@ model Transcription {
 model EntryMetadata {
   id      String   @id @default(uuid())
   entryId String   @unique @map("entry_id")
-  mood    String?
+  mood    String[]
   topics  String[]
   people  String[]
   places  String[]
@@ -90,6 +90,7 @@ model EntryMetadata {
 }
 
 enum JobStatus {
+  awaiting_book
   queued
   processing
   done

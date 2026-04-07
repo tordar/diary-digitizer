@@ -63,8 +63,8 @@ export default function ExplorePage() {
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Bøker</p>
           <div className="flex flex-col gap-3">
             {data.bookStats.map((book) => {
-              const moods = data.bookMoods.filter((m) => m.book_id === book.id)
-              const moodColors: Record<string, string> = { glad: '#86efac', nøytral: '#94a3b8', lav: '#fca5a5', blandet: '#fcd34d' }
+              const moods = data.bookMoods.filter((m) => m.book_id === book.id).sort((a, b) => b.count - a.count)
+              const palette = ['#818cf8', '#86efac', '#67e8f9', '#fcd34d', '#fb923c', '#fca5a5', '#d8b4fe', '#6ee7b7']
               const total = moods.reduce((s, m) => s + m.count, 0)
               return (
                 <div key={book.id} className="flex flex-col gap-1">
@@ -82,8 +82,9 @@ export default function ExplorePage() {
                           key={m.mood}
                           style={{
                             width: `${(m.count / total) * 100}%`,
-                            background: moodColors[m.mood] ?? '#475569',
+                            background: palette[moods.indexOf(m) % palette.length],
                           }}
+                          title={`${m.mood}: ${m.count}`}
                         />
                       ))}
                     </div>

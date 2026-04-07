@@ -2,12 +2,33 @@ import { aiResponseSchema, type AiResponse } from './schema'
 import { readFile } from 'fs/promises'
 import sharp from 'sharp'
 
+// Attempt to recover a JSON object truncated mid-string (model hit token limit)
+function repairTruncatedJson(raw: string): unknown | null {
+  const suffixes = [
+    // Already a complete object, just trailing text — extract it
+    '',
+    // Truncated inside a string value
+    '", "mood": null, "topics": [], "people": [], "places": [], "themes": [], "confidence_score": 0.7, "split_entries": []}',
+    // Truncated at a field boundary
+    '"mood": null, "topics": [], "people": [], "places": [], "themes": [], "confidence_score": 0.7, "split_entries": []}',
+  ]
+  for (const suffix of suffixes) {
+    const candidate = raw + suffix
+    const match = candidate.match(/\{[\s\S]*\}/)
+    if (match) {
+      try { return JSON.parse(match[0]) } catch {}
+    }
+  }
+  return null
+}
+
 export async function transcribePage(
   imagePath: string,
   promptTemplate: string,
   ollamaUrl: string,
   model: string,
-  monthHint?: string | null
+  monthHint?: string | null,
+  bookYearHint?: string | null
 ): Promise<AiResponse> {
   let imageBuffer: Buffer
   let mimeType: string
@@ -31,9 +52,13 @@ export async function transcribePage(
 
   const base64Image = imageBuffer.toString('base64')
 
-  const prompt = monthHint
-    ? `${promptTemplate}\n\nNote: This page is from ${monthHint}. Use this as context for date inference.`
-    : promptTemplate
+  let prompt = promptTemplate
+  if (monthHint) {
+    const year = monthHint.match(/\d{4}/)?.[0] ?? ''
+    prompt += `\n\nIMPORTANT: This page is from a folder labelled "${monthHint}". Treat the year ${year} as authoritative when inferring the date. Do not infer a different year unless the page itself explicitly states one.`
+  } else if (bookYearHint) {
+    prompt += `\n\nIMPORTANT: This page is from a journal covering the year(s) ${bookYearHint}. Use whichever of these years best fits the date context on the page. Do not infer a year outside this range unless the page itself explicitly states one.`
+  }
 
   const response = await fetch(`${ollamaUrl}/api/chat`, {
     method: 'POST',
@@ -42,6 +67,7 @@ export async function transcribePage(
       model,
       format: 'json',
       stream: false,
+      options: { num_predict: 16384 },
       messages: [
         {
           role: 'user',
@@ -68,7 +94,11 @@ export async function transcribePage(
   try {
     parsed = JSON.parse(rawContent)
   } catch {
-    throw new Error(`Ollama returned non-JSON: ${rawContent.slice(0, 200)}`)
+    // Try to recover truncated JSON (model hit token limit mid-transcription)
+    parsed = repairTruncatedJson(rawContent)
+    if (!parsed) {
+      throw new Error(`Ollama returned non-JSON: ${rawContent.slice(0, 200)}`)
+    }
   }
 
   const validated = aiResponseSchema.safeParse(parsed)

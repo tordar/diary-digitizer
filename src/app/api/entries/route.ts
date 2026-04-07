@@ -14,7 +14,7 @@ interface EntryFilters {
   status?: string
 }
 
-export function buildEntriesWhere(filters: EntryFilters): Prisma.EntryWhereInput {
+function buildEntriesWhere(filters: EntryFilters): Prisma.EntryWhereInput {
   const where: Prisma.EntryWhereInput = {
     status: (filters.status ?? 'approved') as Prisma.EntryWhereInput['status'],
   }
@@ -23,7 +23,7 @@ export function buildEntriesWhere(filters: EntryFilters): Prisma.EntryWhereInput
   if (filters.entryType) where.entryType = filters.entryType as Prisma.EntryWhereInput['entryType']
 
   const metadataWhere: Prisma.EntryMetadataWhereInput = {}
-  if (filters.mood) metadataWhere.mood = filters.mood
+  if (filters.mood) metadataWhere.mood = { has: filters.mood }
   if (filters.person) metadataWhere.people = { has: filters.person }
   if (filters.place) metadataWhere.places = { has: filters.place }
   if (filters.topic) metadataWhere.topics = { has: filters.topic }
@@ -82,6 +82,7 @@ export async function GET(req: NextRequest) {
         pages: { select: { id: true, filePath: true, pageOrder: true }, orderBy: { pageOrder: 'asc' }, take: 1 },
         transcription: { select: { correctedText: true, rawText: true } },
         metadata: { select: { mood: true, topics: true, people: true, places: true } },
+        _count: { select: { pages: true } },
       },
     }),
     db.entry.count({ where }),

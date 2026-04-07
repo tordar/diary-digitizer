@@ -102,12 +102,15 @@ export async function enqueueFile(
     },
   })
 
+  // If no explicit bookId was given, hold job until user confirms the book assignment
+  const jobStatus = defaultBookId ? 'queued' : 'awaiting_book'
+
   await db.processingJob.create({
     data: {
       pageId: page.id,
-      status: 'queued',
+      status: jobStatus,
     },
   })
 
-  console.log(`[importer] Enqueued: ${filename} → book ${bookId}`)
+  console.log(`[importer] Enqueued: ${filename} → book ${bookId} (status: ${jobStatus})`)
 }
