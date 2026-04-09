@@ -2,9 +2,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { MoodChart } from '@/components/MoodChart'
+import { MoodTimeline } from '@/components/MoodTimeline'
 
 interface ExploreData {
   moodByYear: { year: number; mood: string; count: number }[]
+  entriesByYear: { year: number; count: number }[]
+  moodByYearMonth: { year: number; month: number; mood: string; count: number }[]
+  entriesByYearMonth: { year: number; month: number; count: number }[]
   topPeople: { person: string; count: number }[]
   topPlaces: { place: string; count: number }[]
   topTopics: { topic: string; count: number }[]
@@ -43,6 +47,7 @@ function TagCloud({ items, label, filterKey }: {
 }
 
 export default function ExplorePage() {
+  const router = useRouter()
   const [data, setData] = useState<ExploreData | null>(null)
 
   useEffect(() => {
@@ -56,40 +61,46 @@ export default function ExplorePage() {
       <h1 className="mb-6 text-xl font-semibold text-slate-100">Utforsk</h1>
       <div className="flex flex-col gap-6">
         <MoodChart data={data.moodByYear} />
+        <MoodTimeline
+          data={data.moodByYearMonth}
+          entryData={data.entriesByYearMonth}
+          yearData={data.moodByYear}
+          entryYearData={data.entriesByYear}
+        />
         <TagCloud items={data.topPeople.map((p) => ({ value: p.person, count: p.count }))} label="Personer" filterKey="person" />
         <TagCloud items={data.topPlaces.map((p) => ({ value: p.place, count: p.count }))} label="Steder" filterKey="place" />
         <TagCloud items={data.topTopics.map((t) => ({ value: t.topic, count: t.count }))} label="Temaer" filterKey="topic" />
         <div className="rounded-lg border border-slate-800 bg-slate-900 p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">Bøker</p>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col divide-y divide-slate-800">
             {data.bookStats.map((book) => {
-              const moods = data.bookMoods.filter((m) => m.book_id === book.id).sort((a, b) => b.count - a.count)
-              const palette = ['#818cf8', '#86efac', '#67e8f9', '#fcd34d', '#fb923c', '#fca5a5', '#d8b4fe', '#6ee7b7']
-              const total = moods.reduce((s, m) => s + m.count, 0)
+              const moodsRaw = data.bookMoods.filter((m) => m.book_id === book.id)
+              const moodMap = new Map<string, number>()
+              for (const m of moodsRaw) moodMap.set(m.mood, (moodMap.get(m.mood) ?? 0) + m.count)
+              const topMoods = [...moodMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
               return (
-                <div key={book.id} className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
+                <button
+                  key={book.id}
+                  onClick={() => router.push(`/?bookId=${book.id}`)}
+                  className="flex items-center justify-between gap-4 py-3 text-left transition-colors hover:text-slate-100 first:pt-0 last:pb-0"
+                >
+                  <div className="flex flex-col gap-1 min-w-0">
                     <span className="text-sm font-medium text-slate-200">{book.name}</span>
-                    <span className="text-xs text-slate-500">{book._count.entries} oppføringer</span>
-                  </div>
-                  {book.dateRange && (
-                    <span className="text-[11px] text-slate-500">{book.dateRange}</span>
-                  )}
-                  {moods.length > 0 && (
-                    <div className="flex h-2 w-full overflow-hidden rounded" title={moods.map((m) => `${m.mood}: ${m.count}`).join(', ')}>
-                      {moods.map((m) => (
-                        <div
-                          key={m.mood}
-                          style={{
-                            width: `${(m.count / total) * 100}%`,
-                            background: palette[moods.indexOf(m) % palette.length],
-                          }}
-                          title={`${m.mood}: ${m.count}`}
-                        />
-                      ))}
+                    <div className="flex items-center gap-2">
+                      {book.dateRange && (
+                        <span className="text-[11px] text-slate-500">{book.dateRange}</span>
+                      )}
+                      {topMoods.length > 0 && (
+                        <div className="flex gap-1">
+                          {topMoods.map(([mood]) => (
+                            <span key={mood} className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">{mood}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                  <span className="flex-shrink-0 text-xs tabular-nums text-slate-500">{book._count.entries} oppføringer</span>
+                </button>
               )
             })}
           </div>

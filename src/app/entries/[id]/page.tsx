@@ -26,7 +26,7 @@ interface EntryData {
 export default function EntryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [entry, setEntry] = useState<EntryData | null>(null)
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(true)
   const [correctedText, setCorrectedText] = useState('')
   const [adjacentIds, setAdjacentIds] = useState<{ prev: string | null; next: string | null }>({ prev: null, next: null })
   const router = useRouter()
@@ -57,7 +57,6 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ correctedText }),
     })
-    setEditing(false)
     setEntry((e) => e ? {
       ...e,
       transcription: e.transcription ? { ...e.transcription, correctedText } : null,
@@ -118,12 +117,6 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
             <span className="text-[11px] text-slate-500">
               {Math.round(entry.confidenceScore * 100)}% sikkerhet
             </span>
-            <button
-              onClick={() => setEditing((e) => !e)}
-              className="rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-slate-800"
-            >
-              {editing ? 'Avbryt' : '✏️ Rediger'}
-            </button>
           </div>
 
           <div className="flex-1 px-4 py-4">

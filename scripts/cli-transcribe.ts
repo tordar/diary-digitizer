@@ -26,12 +26,53 @@ const IMAGES_DIR = join(DATA_DIR, 'images')
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.heic'])
 const CONFIDENCE_THRESHOLD = 0.85
 
+async function callOllama(model: string, imageBase64: string, promptText: string): Promise<string> {
+  const res = await fetch('http://localhost:11434/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: promptText, images: [imageBase64] }],
+      stream: true,
+      think: false,
+      options: { temperature: 0.1, repeat_penalty: 1.5, num_predict: 2048 },
+    }),
+  })
+  if (!res.ok) throw new Error(`Ollama HTTP ${res.status}: ${await res.text()}`)
+  if (!res.body) throw new Error('No response body')
+
+  let full = ''
+  const decoder = new TextDecoder()
+  process.stderr.write('  ')
+  let aborted = false
+  for await (const chunk of res.body) {
+    if (aborted) break
+    const lines = decoder.decode(chunk).split('\n').filter(Boolean)
+    for (const line of lines) {
+      const json = JSON.parse(line) as { message?: { content?: string }; done?: boolean }
+      const token = json.message?.content ?? ''
+      full += token
+      process.stderr.write(token)
+      if (json.done) process.stderr.write('\n')
+      // Detect repetition loop: same phrase (8+ chars) repeated 6+ times in the last 400 chars
+      if (full.length > 600 && /(.{8,})\1{5,}/.test(full.slice(-400))) {
+        process.stderr.write('\n[repetition loop detected, aborting]\n')
+        aborted = true
+        break
+      }
+    }
+  }
+  if (aborted) throw new Error('repetition loop')
+  return full
+}
+
 async function main() {
-  const [, , dir, bookNameOrId, monthHint] = process.argv
+  const [, , dir, bookNameOrId, monthHint, ollamaModel] = process.argv
   if (!dir || !bookNameOrId) {
-    console.error('Usage: tsx scripts/cli-transcribe.ts <image-dir> <book-name-or-id> [month-hint]')
+    console.error('Usage: tsx scripts/cli-transcribe.ts <image-dir> <book-name-or-id> [month-hint] [ollama-model]')
     process.exit(1)
   }
+  if (ollamaModel) console.log(`[cli] Using Ollama model: ${ollamaModel}`)
 
   const { db } = await import('../src/lib/db')
   const { aiResponseSchema } = await import('../src/lib/schema')
@@ -109,52 +150,110 @@ async function main() {
       copyFileSync(imagePath, storedPath)
     }
 
+    // Fetch prior transcription context from the last entry in this book
+    const priorEntry = await db.entry.findFirst({
+      where: { bookId: book.id },
+      orderBy: { createdAt: 'desc' },
+      include: { transcription: { select: { rawText: true } } },
+    })
+    const priorContext = priorEntry?.transcription?.rawText ?? null
+
     console.log(`${prefix} — transcribing...`)
     const t0 = Date.now()
 
-    const claudePrompt =
-      `Read the image file at "${imagePath}" and transcribe it.\n\n${prompt}\n\nReturn only valid JSON. No markdown, no explanation.`
+    const contextNote = priorContext
+      ? `\n\nContext from the previous entry in this journal (use this to inform vocabulary, topics, and handwriting recognition on this page):\n"""\n${priorContext.slice(0, 1200)}\n"""`
+      : ''
 
-    const result = spawnSync(
-      'claude',
-      ['-p', claudePrompt, '--allowedTools', 'Read'],
-      { encoding: 'utf8', timeout: 120_000, maxBuffer: 10 * 1024 * 1024 }
-    )
+    let raw: string
+    if (ollamaModel) {
+      const ollamaPrompt = `${prompt}${contextNote}\n\nReturn only valid JSON. No markdown, no explanation.`
+      const sharp = (await import('sharp')).default
+      const imageBuffer = await sharp(imagePath)
+        .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer()
+      const imageBase64 = imageBuffer.toString('base64')
+      try {
+        raw = (await callOllama(ollamaModel, imageBase64, ollamaPrompt)).trim()
+      } catch (err) {
+        console.error(`${prefix} — Ollama error: ${(err as Error).message}`)
+        failed++
+        continue
+      }
+    } else {
+      const claudePrompt =
+        `Read the image file at "${imagePath}" and transcribe it.\n\n${prompt}${contextNote}\n\nReturn only valid JSON. No markdown, no explanation.`
+      const claudeArgs = ['-p', claudePrompt, '--allowedTools', 'Read']
+      const spawnOpts = { encoding: 'utf8' as const, timeout: 480_000, maxBuffer: 10 * 1024 * 1024 }
 
-    if (result.error) {
-      console.error(`${prefix} — CLI error: ${result.error.message}`)
-      failed++
-      continue
+      let result = spawnSync('claude', claudeArgs, spawnOpts)
+
+      if (result.error?.code === 'ETIMEDOUT') {
+        console.warn(`${prefix} — timeout, retrying once...`)
+        result = spawnSync('claude', claudeArgs, spawnOpts)
+      }
+
+      if (result.error) {
+        console.error(`${prefix} — CLI error: ${result.error.message}`)
+        failed++
+        continue
+      }
+
+      if (result.status !== 0) {
+        const stderr = result.stderr?.trim()
+        console.error(`${prefix} — Claude exited with status ${result.status}`)
+        if (stderr) console.error(`  stderr: ${stderr.slice(0, 500)}`)
+        const stdout = result.stdout?.trim()
+        if (stdout) console.error(`  stdout: ${stdout.slice(0, 300)}`)
+        failed++
+        continue
+      }
+
+      raw = result.stdout?.trim() ?? ''
+      if (!raw) {
+        console.error(`${prefix} — empty response`)
+        if (result.stderr) console.error(result.stderr.slice(0, 300))
+        failed++
+        continue
+      }
     }
 
-    const raw = result.stdout?.trim()
-    if (!raw) {
-      console.error(`${prefix} — empty response`)
-      if (result.stderr) console.error(result.stderr.slice(0, 300))
-      failed++
-      continue
-    }
-
-    // Parse JSON — try direct, then extract from surrounding text
+    // Parse JSON — try direct, then extract from surrounding text, then strip invalid escapes
+    const sanitize = (s: string) => s.replace(/\\(?!["\\/bfnrtu0-9])/g, '\\\\')
     let parsed: unknown
     try {
       parsed = JSON.parse(raw)
     } catch {
       const match = raw.match(/\{[\s\S]*\}/)
       if (match) {
-        try { parsed = JSON.parse(match[0]) } catch {}
+        try { parsed = JSON.parse(match[0]) } catch {
+          try { parsed = JSON.parse(sanitize(match[0])) } catch {}
+        }
       }
     }
 
     if (!parsed) {
-      console.error(`${prefix} — could not parse JSON: ${raw.slice(0, 200)}`)
+      console.error(`${prefix} — could not parse JSON: ${raw.slice(0, 300)}`)
       failed++
       continue
+    }
+
+    // Normalize keys that the model commonly misspells (e.g. date_inlamferred → date_inferred)
+    if (parsed && typeof parsed === 'object') {
+      const obj = parsed as Record<string, unknown>
+      for (const key of Object.keys(obj)) {
+        if (key !== 'date_inferred' && /^date_in/.test(key)) {
+          obj['date_inferred'] = obj[key]
+          delete obj[key]
+        }
+      }
     }
 
     const validated = aiResponseSchema.safeParse(parsed)
     if (!validated.success) {
       console.error(`${prefix} — schema invalid: ${validated.error.message}`)
+      console.error(`${prefix} — raw parsed: ${JSON.stringify(parsed).slice(0, 400)}`)
       failed++
       continue
     }
@@ -220,16 +319,27 @@ async function main() {
       },
     })
 
-    await db.page.create({
-      data: {
-        bookId: book.id,
-        entryId: entry.id,
-        filePath: storedPath,
-        originalPath: imagePath,
-        fileHash,
-        pageOrder: 0,
-      },
-    })
+    try {
+      await db.page.create({
+        data: {
+          bookId: book.id,
+          entryId: entry.id,
+          filePath: storedPath,
+          originalPath: imagePath,
+          fileHash,
+          pageOrder: 0,
+        },
+      })
+    } catch (err: unknown) {
+      if ((err as { code?: string }).code === 'P2002') {
+        // Page already saved from a previous interrupted run — clean up orphan entry and skip
+        await db.entry.delete({ where: { id: entry.id } })
+        console.log(`${prefix} — skipped (page already in DB, orphan entry cleaned up)`)
+        done++
+        continue
+      }
+      throw err
+    }
 
     if (ai.entry_type !== 'image' && ai.transcription) {
       await db.transcription.create({

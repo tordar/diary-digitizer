@@ -22,15 +22,8 @@ export function EntryHeader({
   displayDate,
   onSaved,
 }: EntryHeaderProps) {
-  const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDate, setEditDate] = useState('')
-
-  const startEdit = () => {
-    setEditTitle(title ?? '')
-    setEditDate(date ? date.slice(0, 10) : '')
-    setEditing(true)
-  }
+  const [editTitle, setEditTitle] = useState(title ?? '')
+  const [editDate, setEditDate] = useState(date ? date.slice(0, 10) : '')
 
   const save = async () => {
     await fetch(`/api/entries/${entryId}`, {
@@ -39,57 +32,31 @@ export function EntryHeader({
       body: JSON.stringify({ title: editTitle || null, date: editDate || null }),
     })
     onSaved(editTitle || null, editDate || null)
-    setEditing(false)
   }
 
   return (
     <>
-      {editing ? (
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            placeholder="Tittel (valgfritt)"
-            className="rounded border border-slate-600 bg-slate-900 px-2 py-0.5 text-sm text-slate-100 focus:border-slate-400 focus:outline-none"
-          />
-          <input
-            type="date"
-            value={editDate}
-            onChange={(e) => setEditDate(e.target.value)}
-            className="rounded border border-slate-600 bg-slate-900 px-2 py-0.5 text-sm text-slate-100 focus:border-slate-400 focus:outline-none"
-          />
-          <button
-            onClick={save}
-            className="rounded bg-violet-700 px-2 py-0.5 text-[11px] text-white hover:bg-violet-600"
-          >
-            Lagre
-          </button>
-          <button
-            onClick={() => setEditing(false)}
-            className="text-[11px] text-slate-500 hover:text-slate-300"
-          >
-            Avbryt
-          </button>
-        </div>
-      ) : (
-        <>
-          <span className="text-sm font-medium text-slate-100">
-            {title ?? displayDate}
-          </span>
-          {title && (
-            <span className="text-xs text-slate-500">
-              {displayDate}{dateInferred && ' (anslått)'}
-            </span>
-          )}
-          <button
-            onClick={startEdit}
-            className="rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400 hover:bg-slate-800"
-          >
-            ✏️ Rediger
-          </button>
-        </>
-      )}
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={editTitle}
+          onChange={(e) => setEditTitle(e.target.value)}
+          placeholder="Tittel (valgfritt)"
+          className="rounded border border-slate-600 bg-slate-900 px-2 py-0.5 text-sm text-slate-100 focus:border-slate-400 focus:outline-none"
+        />
+        <input
+          type="date"
+          value={editDate}
+          onChange={(e) => setEditDate(e.target.value)}
+          className="rounded border border-slate-600 bg-slate-900 px-2 py-0.5 text-sm text-slate-100 focus:border-slate-400 focus:outline-none"
+        />
+        <button
+          onClick={save}
+          className="rounded bg-violet-700 px-2 py-0.5 text-[11px] text-white hover:bg-violet-600"
+        >
+          Lagre
+        </button>
+      </div>
       <span className="text-xs text-slate-500">· {bookName}</span>
       <div className="flex-1" />
       <span className={`rounded-full px-2.5 py-0.5 text-[11px] ${

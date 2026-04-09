@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 export async function GET() {
-  const [moodByYear, entriesByYear, entriesByYearMonth, topPeople, topPlaces, topTopics, bookStats, bookMoods] = await Promise.all([
+  const [moodByYear, entriesByYear, entriesByYearMonth, topPeople, topPlaces, topTopics, bookStats, bookMoods, moodByYearMonth, entryTypeCounts, noDateCount, totalPeopleCount, totalPlacesCount] = await Promise.all([
     db.$queryRaw<{ year: number; mood: string; count: bigint }[]>`
       SELECT
         EXTRACT(YEAR FROM e.date)::int AS year,
@@ -71,6 +71,35 @@ export async function GET() {
       GROUP BY e.book_id, mood
       ORDER BY e.book_id, count DESC
     `,
+    db.$queryRaw<{ year: number; month: number; mood: string; count: bigint }[]>`
+      SELECT
+        EXTRACT(YEAR FROM e.date)::int AS year,
+        EXTRACT(MONTH FROM e.date)::int AS month,
+        unnest(m.mood) AS mood,
+        COUNT(*)::bigint AS count
+      FROM entries e
+      JOIN entry_metadata m ON m.entry_id = e.id
+      WHERE e.status = 'approved' AND e.date IS NOT NULL AND array_length(m.mood, 1) > 0
+      GROUP BY year, month, mood
+      ORDER BY year, month, mood
+    `,
+    db.$queryRaw<{ entry_type: string; count: bigint }[]>`
+      SELECT entry_type, COUNT(*)::bigint AS count
+      FROM entries
+      WHERE status = 'approved'
+      GROUP BY entry_type
+    `,
+    db.entry.count({ where: { status: 'approved', date: null } }),
+    db.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(DISTINCT p) AS count FROM entry_metadata em
+      JOIN entries e ON e.id = em.entry_id, unnest(em.people) AS p
+      WHERE e.status = 'approved'
+    `,
+    db.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(DISTINCT pl) AS count FROM entry_metadata em
+      JOIN entries e ON e.id = em.entry_id, unnest(em.places) AS pl
+      WHERE e.status = 'approved'
+    `,
   ])
 
   return NextResponse.json({
@@ -82,5 +111,10 @@ export async function GET() {
     topTopics: topTopics.map((r) => ({ ...r, count: Number(r.count) })),
     bookStats,
     bookMoods: bookMoods.map((r) => ({ ...r, count: Number(r.count) })),
+    moodByYearMonth: moodByYearMonth.map((r) => ({ ...r, count: Number(r.count) })),
+    entryTypeCounts: entryTypeCounts.map((r) => ({ entryType: r.entry_type, count: Number(r.count) })),
+    noDateCount,
+    totalPeopleCount: Number(totalPeopleCount[0]?.count ?? 0),
+    totalPlacesCount: Number(totalPlacesCount[0]?.count ?? 0),
   })
 }

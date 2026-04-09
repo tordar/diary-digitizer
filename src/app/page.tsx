@@ -78,14 +78,17 @@ function BrowsePageContent() {
 
   const activeYear = searchParams.get('year') ? Number(searchParams.get('year')) : undefined
   const activeMonth = searchParams.get('month') ? Number(searchParams.get('month')) : undefined
+  const activeNoDate = searchParams.get('noDate') === 'true'
 
   const [q, setQ] = useState(searchParams.get('q') ?? '')
+  const [filterOpen, setFilterOpen] = useState(false)
   const [view, setView] = useState<'list' | 'grid'>('list')
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [merging, setMerging] = useState(false)
   const [entries, setEntries] = useState<Entry[]>([])
   const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [books, setBooks] = useState<{ value: string; label: string; count: number }[]>([])
   const [exploreData, setExploreData] = useState<{
     topTopics: { topic: string; count: number }[]
@@ -94,6 +97,10 @@ function BrowsePageContent() {
     moodByYear: { year: number; mood: string; count: number }[]
     entriesByYear: { year: number; count: number }[]
     entriesByYearMonth: { year: number; month: number; count: number }[]
+    entryTypeCounts: { entryType: string; count: number }[]
+    noDateCount: number
+    totalPeopleCount: number
+    totalPlacesCount: number
   } | null>(null)
 
   const buildParams = useCallback(
@@ -116,7 +123,15 @@ function BrowsePageContent() {
     if (activeYear === year) {
       router.push(`/?${buildParams({ year: null, month: null })}`)
     } else {
-      router.push(`/?${buildParams({ year: String(year), month: null })}`)
+      router.push(`/?${buildParams({ year: String(year), month: null, noDate: null })}`)
+    }
+  }
+
+  const onNoDateClick = () => {
+    if (activeNoDate) {
+      router.push(`/?${buildParams({ noDate: null })}`)
+    } else {
+      router.push(`/?${buildParams({ noDate: 'true', year: null, month: null })}`)
     }
   }
 
@@ -160,6 +175,10 @@ function BrowsePageContent() {
   }
 
   useEffect(() => {
+    setPage(1)
+  }, [searchParams, q])
+
+  useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
     if (q) params.set('q', q)
     else params.delete('q')
@@ -167,7 +186,12 @@ function BrowsePageContent() {
     // Convert year/month to dateFrom/dateTo
     params.delete('year')
     params.delete('month')
-    if (activeYear) {
+    if (activeNoDate) {
+      params.set('noDate', 'true')
+      params.delete('dateFrom')
+      params.delete('dateTo')
+    } else if (activeYear) {
+      params.delete('noDate')
       if (activeMonth) {
         const lastDay = new Date(activeYear, activeMonth, 0).getDate()
         params.set('dateFrom', `${activeYear}-${String(activeMonth).padStart(2, '0')}-01`)
@@ -176,26 +200,27 @@ function BrowsePageContent() {
         params.set('dateFrom', `${activeYear}-01-01`)
         params.set('dateTo', `${activeYear}-12-31`)
       }
+    } else {
+      params.delete('noDate')
     }
+
+    params.set('page', String(page))
 
     fetch(`/api/entries?${params}`)
       .then((r) => r.json())
       .then(({ entries: e, total: t }) => {
-        setEntries(e)
+        setEntries((prev) => page === 1 ? e : [...prev, ...e])
         setTotal(t)
       })
-  }, [searchParams, q])
+  }, [searchParams, q, page])
 
-  // Derive mood and type counts from current entry list
-  const moodCounts = entries.reduce<Record<string, number>>((acc, e) => {
-    for (const m of e.metadata?.mood ?? []) {
-      acc[m] = (acc[m] ?? 0) + 1
-    }
+  const moodCounts = (exploreData?.moodByYear ?? []).reduce<Record<string, number>>((acc, r) => {
+    acc[r.mood] = (acc[r.mood] ?? 0) + r.count
     return acc
   }, {})
 
-  const typeCounts = entries.reduce<Record<string, number>>((acc, e) => {
-    acc[e.entryType] = (acc[e.entryType] ?? 0) + 1
+  const typeCounts = (exploreData?.entryTypeCounts ?? []).reduce<Record<string, number>>((acc, r) => {
+    acc[r.entryType] = r.count
     return acc
   }, {})
 
@@ -229,16 +254,31 @@ function BrowsePageContent() {
           places={(exploreData?.topPlaces ?? []).map((p) => ({ value: p.place, label: p.place, count: p.count }))}
           activeFilters={activeFilters}
           onFilterChange={onFilterChange}
+          mobileOpen={filterOpen}
+          onClose={() => setFilterOpen(false)}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="border-b border-slate-800 p-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Søk i alle oppføringer..."
-              className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-slate-500 focus:outline-none"
-            />
+            <div className="flex gap-2">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Søk i alle oppføringer..."
+                className="min-w-0 flex-1 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-slate-500 focus:outline-none"
+              />
+              <button
+                onClick={() => setFilterOpen(true)}
+                className="relative flex-shrink-0 rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-400 hover:border-slate-500 hover:text-slate-200 md:hidden"
+              >
+                Filter
+                {Object.values(activeFilters).some(Boolean) && (
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[10px] text-white">
+                    {Object.values(activeFilters).filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+            </div>
 
             {/* Year navigation */}
             {yearCounts.length > 0 && (
@@ -257,11 +297,24 @@ function BrowsePageContent() {
                     <span className={`ml-1 text-[10px] ${activeYear === year ? 'text-violet-300' : 'text-slate-600'}`}>{count}</span>
                   </button>
                 ))}
+                {(exploreData?.noDateCount ?? 0) > 0 && (
+                  <button
+                    onClick={onNoDateClick}
+                    className={`flex-shrink-0 rounded px-2 py-0.5 text-xs transition-colors ${
+                      activeNoDate
+                        ? 'bg-violet-700 text-violet-100'
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    Ukjent
+                    <span className={`ml-1 text-[10px] ${activeNoDate ? 'text-violet-300' : 'text-slate-600'}`}>{exploreData?.noDateCount}</span>
+                  </button>
+                )}
               </div>
             )}
 
             {/* Month navigation */}
-            {activeYear && (
+            {activeYear && !activeNoDate && (
               <div className="mt-1.5 flex gap-1 overflow-x-auto pb-0.5">
                 {MONTH_NAMES.map((name, i) => {
                   const m = i + 1
@@ -390,6 +443,17 @@ function BrowsePageContent() {
               <p className="py-16 text-center text-sm text-slate-600">Ingen oppføringer funnet</p>
             )}
 
+            {entries.length > 0 && entries.length < total && (
+              <div className="py-4 text-center">
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  className="rounded-md border border-slate-700 px-4 py-1.5 text-xs text-slate-400 hover:border-slate-500 hover:text-slate-200 transition-colors"
+                >
+                  Last inn flere ({entries.length} av {total})
+                </button>
+              </div>
+            )}
+
             {/* Merge action bar */}
             {selectMode && selected.size > 0 && (
               <div className="sticky bottom-3 flex items-center justify-center">
@@ -416,8 +480,8 @@ function BrowsePageContent() {
         <TimelineHeatmap
           data={yearCounts}
           totalEntries={total}
-          totalPeople={exploreData?.topPeople.length ?? 0}
-          totalPlaces={exploreData?.topPlaces.length ?? 0}
+          totalPeople={exploreData?.totalPeopleCount ?? 0}
+          totalPlaces={exploreData?.totalPlacesCount ?? 0}
         />
       </div>
     </div>

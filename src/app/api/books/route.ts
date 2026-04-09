@@ -14,6 +14,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { name, dateRange } = await req.json()
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })
-  const book = await db.book.create({ data: { name, dateRange } })
+  const book = await db.book.create({
+    data: { name, dateRange },
+    include: { _count: { select: { entries: true, pages: true } } },
+  })
   return NextResponse.json(book, { status: 201 })
 }

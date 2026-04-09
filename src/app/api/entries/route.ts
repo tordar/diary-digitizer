@@ -10,6 +10,7 @@ interface EntryFilters {
   topic?: string
   dateFrom?: string
   dateTo?: string
+  noDate?: boolean
   q?: string
   status?: string
 }
@@ -29,7 +30,9 @@ function buildEntriesWhere(filters: EntryFilters): Prisma.EntryWhereInput {
   if (filters.topic) metadataWhere.topics = { has: filters.topic }
   if (Object.keys(metadataWhere).length > 0) where.metadata = metadataWhere
 
-  if (filters.dateFrom || filters.dateTo) {
+  if (filters.noDate) {
+    where.date = null
+  } else if (filters.dateFrom || filters.dateTo) {
     where.date = {
       ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
       ...(filters.dateTo ? { lte: new Date(filters.dateTo) } : {}),
@@ -52,6 +55,7 @@ export async function GET(req: NextRequest) {
     dateTo: searchParams.get('dateTo') ?? undefined,
     q: searchParams.get('q') ?? undefined,
     status: searchParams.get('status') ?? undefined,
+    noDate: searchParams.get('noDate') === 'true',
   }
 
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1') || 1)
@@ -76,7 +80,7 @@ export async function GET(req: NextRequest) {
       where,
       skip,
       take: limit,
-      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ date: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
       include: {
         book: { select: { id: true, name: true } },
         pages: { select: { id: true, filePath: true, pageOrder: true }, orderBy: { pageOrder: 'asc' }, take: 1 },

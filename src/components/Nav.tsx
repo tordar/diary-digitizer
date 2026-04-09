@@ -14,8 +14,8 @@ const links = [
 export function Nav({ reviewCount }: { reviewCount?: number }) {
   const pathname = usePathname()
   return (
-    <nav className="flex items-center gap-1 border-b border-slate-800 bg-slate-950 px-4 py-2">
-      <span className="mr-4 text-sm font-bold text-slate-100">📓 Dagbok</span>
+    <nav className="flex items-center gap-1 overflow-x-auto border-b border-slate-800 bg-slate-950 px-4 py-2">
+      <span className="mr-4 flex-shrink-0 text-sm font-bold text-slate-100">📓 Dagbok</span>
       {links.map(({ href, label }) => (
         <Link
           key={href}
